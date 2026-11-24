@@ -1,0 +1,9 @@
+node_modules/
+.orca/
+# Local working notes (contain machine-specific paths); not part of the plugin.
+HANDOFF.md
+# Videos never belong in the repo.
+*.mp4
+*.webm
+*.mkv
+*.mov

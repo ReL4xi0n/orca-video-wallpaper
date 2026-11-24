@@ -1,0 +1,20 @@
+{
+  "manifestVersion": 2,
+  "id": "video-wallpaper",
+  "name": "Video Background",
+  "version": "0.1.0",
+  "description": "Orca dark colors with a looping video background.",
+  "engines": {
+    "orca": ">=1.4.246"
+  },
+  "execution": "data",
+  "contributes": {
+    "themes": [
+      {
+        "id": "video-wallpaper-dark",
+        "title": "Video Background",
+        "path": "themes/dark.json"
+      }
+    ]
+  }
+}
