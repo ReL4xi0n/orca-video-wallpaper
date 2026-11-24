@@ -6,6 +6,7 @@ import { createWriteStream, existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+import { childEnv, LOCAL_APPDATA, PROGRAM_FILES } from './paths'
 
 export type Tool = 'ffmpeg' | 'ffprobe' | 'yt-dlp' | 'node'
 
@@ -16,10 +17,10 @@ export function findTool(name: Tool, fresh = false): string | null {
   if (!fresh && cache.has(name)) return cache.get(name) ?? null
   const exe = `${name}.exe`
   const dirs = (process.env.PATH ?? '').split(';').filter(Boolean)
-  const local = process.env.LOCALAPPDATA ?? ''
+  const local = LOCAL_APPDATA
   dirs.push(join(local, 'Microsoft', 'WinGet', 'Links'))
   // Node.js installers put it here without always updating this process's PATH.
-  if (name === 'node') dirs.push(join(process.env.ProgramFiles ?? 'C:\\Program Files', 'nodejs'), join(local, 'Programs', 'nodejs'))
+  if (name === 'node') dirs.push(join(PROGRAM_FILES, 'nodejs'), join(local, 'Programs', 'nodejs'))
   let found: string | null = null
   for (const d of dirs) {
     const p = join(d, exe)
@@ -58,7 +59,7 @@ export function run(
   opts: { onLine?: (line: string) => void; signal?: AbortSignal } = {}
 ): Promise<RunResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(program, args, { windowsHide: true, signal: opts.signal })
+    const child = spawn(program, args, { windowsHide: true, signal: opts.signal, env: childEnv() })
     let stdout = ''
     let stderr = ''
     let pending = ''
@@ -204,6 +205,14 @@ export async function convert(
   const p = await run(ffmpeg, ['-y', '-v', 'error', '-ss', String(from), '-i', input, '-frames:v', '1', '-vf', VF, '-q:v', '3', outPoster], { signal })
   if (p.code !== 0) throw new Error(`Kapak resmi oluşturulamadı: ${lastLine(p.stderr)}`)
   return Math.round(len * 10) / 10
+}
+
+/** A small JPEG of the poster for the panel's video cards (sent to the panel as a data URL). */
+export async function makeThumb(poster: string, outThumb: string): Promise<void> {
+  const ffmpeg = findTool('ffmpeg')
+  if (!ffmpeg) throw new Error('ffmpeg kurulu değil')
+  const r = await run(ffmpeg, ['-y', '-v', 'error', '-i', poster, '-vf', "scale='min(480,iw)':-2", '-q:v', '5', outThumb])
+  if (r.code !== 0) throw new Error(`Küçük kapak oluşturulamadı: ${lastLine(r.stderr)}`)
 }
 
 function lastLine(text: string): string {

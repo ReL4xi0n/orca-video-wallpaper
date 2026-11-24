@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Video Wallpaper</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.ts"></script>
+</head>
+<body>
+  <svg hidden>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-off" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/></symbol>
+  </svg>
+
+  <main>
+    <div id="notices" class="notices" aria-live="polite"></div>
+
+    <section class="panel-card" aria-labelledby="opacity-title">
+      <h2 id="opacity-title">Saydamlık</h2>
+      <div class="field">
+        <div class="field-row"><label for="s-panels">Kenar paneller</label><output for="s-panels" id="o-panels"></output></div>
+        <input type="range" id="s-panels" min="0" max="100" step="1">
+        <p class="hint">Yüksek değer daha koyu.</p>
+      </div>
+      <div class="field">
+        <div class="field-row"><label for="s-center">Orta alan</label><output for="s-center" id="o-center"></output></div>
+        <input type="range" id="s-center" min="0" max="100" step="1">
+        <p class="hint">Düşük değer videoyu daha çok gösterir.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="library-title">
+      <div class="section-head">
+        <h2 id="library-title">Videolarım</h2>
+        <button type="button" class="icon-btn primary" id="open-add" aria-label="Video ekle" title="Video ekle">
+          <svg aria-hidden="true"><use href="#i-plus"/></svg>
+        </button>
+      </div>
+      <div id="job" class="job" hidden>
+        <div class="job-row"><span id="job-text"></span><span id="job-pct"></span></div>
+        <progress id="job-bar" max="100"></progress>
+      </div>
+      <ul id="grid" class="grid" aria-label="Videolarım"></ul>
+      <p id="empty" class="empty" hidden>
+        Henüz video yok. <strong>+</strong> ile ekle. İlk videodan sonra Orca ayarlarında tema olarak
+        “Video Background”u seç ve arka plan opaklığını 1'in altına çek.
+      </p>
+    </section>
+
+    <button type="button" class="link-btn" id="restore" hidden>Kısayolları eski haline getir</button>
+  </main>
+
+  <template id="card-tpl">
+    <li>
+      <article class="card">
+        <img alt="" width="480" height="270">
+        <div class="no-thumb" aria-hidden="true"><svg><use href="#i-film"/></svg></div>
+        <h3><button type="button" class="card-link"></button></h3>
+        <p class="meta"></p>
+        <footer>
+          <button type="button" class="icon-btn danger-ghost delete">
+            <svg aria-hidden="true"><use href="#i-trash"/></svg>
+          </button>
+        </footer>
+      </article>
+    </li>
+  </template>
+
+  <dialog id="add" closedby="any" aria-labelledby="add-title">
+    <h1 id="add-title">Video ekle</h1>
+    <button type="button" class="choice" id="pick" autofocus>
+      <svg aria-hidden="true"><use href="#i-folder"/></svg>
+      <span><strong>Bilgisayardan seç</strong><small>MP4, MKV, WebM, MOV, GIF…</small></span>
+    </button>
+    <div class="or" aria-hidden="true">veya</div>
+    <form id="url-form" class="url-form">
+      <label for="url">Bağlantı (YouTube veya video linki)</label>
+      <div class="url-row">
+        <svg aria-hidden="true"><use href="#i-link"/></svg>
+        <input type="url" id="url" name="url" required placeholder="https://…" autocomplete="off" spellcheck="false">
+      </div>
+      <button type="submit" class="btn primary">Ekle</button>
+    </form>
+    <p class="hint">Videonun ilk 58 saniyesi alınır ve döngüde oynatılır.</p>
+    <form method="dialog" class="dialog-actions">
+      <button value="cancel" class="btn ghost">Vazgeç</button>
+    </form>
+  </dialog>
+
+  <dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <h1 id="confirm-title">Video silinsin mi?</h1>
+    <p id="confirm-text"></p>
+    <form method="dialog" class="dialog-actions">
+      <button value="cancel" class="btn ghost" autofocus>Vazgeç</button>
+      <button value="delete" class="btn danger">Sil</button>
+    </form>
+  </dialog>
+</body>
+</html>

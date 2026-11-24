@@ -36,7 +36,10 @@ Sonra paneli açın: sağ kenar çubuğunda **Video Wallpaper**.
 1. Panelde **Eksik araç** uyarısı varsa **Kur (winget)** düğmesine basın.
 2. **Kısayollar ayarlı değil** uyarısında **Kısayolları ayarla** düğmesine basın. Masaüstü, Başlat menüsü
    ve görev çubuğundaki Orca kısayolları, Orca'yı saydamlık başlatıcısıyla açacak şekilde ayarlanır.
-3. **Video ekle** bölümünden bir dosya seçin ya da bir URL yapıştırın, **Ekle ve uygula**'ya basın.
+3. **Videolarım**'ın yanındaki **+** düğmesine basın; bilgisayardan bir dosya seçin ya da bir bağlantı
+   yapıştırın. Video kütüphaneye kapak resmiyle eklenir ve hemen uygulanır. Bir karta dokunmak o videoya
+   geçer; kartın sağ altındaki çöp kutusu (onay sorarak) videoyu siler. **Boş** kartı videoyu kapatır,
+   Orca normal görünür.
 4. Orca ayarlarında tema olarak **Video Background**'u seçin ve **arka plan opaklığını** 1'in altına
    çekin. Orta alan videoyu ancak o zaman gösterir.
 5. Orca'yı kapatıp kısayoldan yeniden açın. Kenar panel saydamlığı bu açılıştan itibaren çalışır.
@@ -47,7 +50,7 @@ Sonra paneli açın: sağ kenar çubuğunda **Video Wallpaper**.
 
 | Parça | Yer | Görevi |
 | --- | --- | --- |
-| Eklenti | bu depo | Panel ve arka plan işçisi: videoları indirir, dönüştürür, kütüphanede tutar, temayı günceller. |
+| Eklenti | bu depo | Panel (`panel/`, HTML) ve arka plan işçisi (`src/`): videoları indirir, dönüştürür, kütüphanede tutar, temayı günceller. |
 | Video teması | `~/orca-video-theme/theme` | Orca'nın resmi tema arka plan özelliği (`background.videoPath`). Yalnızca veri, kod çalıştırmaz. |
 | Saydamlık başlatıcısı | `~/orca-video-theme/tools` | Orca'yı açar ve kenar panellere saydamlık stili ekler. |
 
@@ -101,10 +104,15 @@ Eklediğiniz videoların kullanım hakkı size aittir. Bu depo hiçbir video iç
 ```sh
 orca plugin types .                # tür tanımlarını .orca/types/ içine yazar
 orca plugin validate .
-orca plugin test .                 # panel testleri (src/panel.test.tsx)
-orca plugin check .                # paneli gerçek işçiyle çizer
+orca plugin test .                 # işçi testleri (src/worker.test.ts), geçici bir ev klasöründe
+orca plugin shot local.video-wallpaper-studio --panel video-wallpaper-studio   # panelin ekran görüntüsü
 node scripts/bundle-assets.mjs     # assets/ değişince src/bundled.ts'i yeniden üretir
 ```
+
+Orca işçiyi kısaltılmış bir ortamla (`LOCALAPPDATA`, `APPDATA` yok) çalıştırır; klasör yolları bu
+yüzden `src/paths.ts`'te ev klasöründen türetilir ve başlatılan programlara tamamlanmış ortam verilir.
+Panel, kütüphane klasöründeki resimleri doğrudan yükleyemediği için kapaklar işçiden `data:` adresi
+olarak gelir.
 
 `assets/` klasörü tema ve başlatıcı dosyalarının okunabilir kaynağıdır. İşçi kendi kurulum klasörünü
 okuyamadığı için bu dosyalar `src/bundled.ts` içine gömülür;

@@ -8,8 +8,9 @@ import type { JobState, VideoItem, WallpaperState } from 'orca'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { convert, download, findTool, run } from './media'
-import { ensureSetup, ORCA_DIR, shortcuts, type ShortcutStatus } from './setup'
+import { convert, download, findTool, makeThumb, run } from './media'
+import { ORCA_DIR } from './paths'
+import { ensureSetup, shortcuts, type ShortcutStatus } from './setup'
 
 const HOME = join(homedir(), 'orca-video-theme')
 const LIBRARY = join(HOME, 'library')
@@ -70,7 +71,6 @@ async function currentState(): Promise<WallpaperState> {
   return {
     library: listLibrary(),
     activeId: st.activeId,
-    videoStrength: clamp(st.videoStrength, 10, 100, 90),
     panels: clamp(cfg.panels, 0, 100, 85),
     center: clamp(cfg.center, 0, 100, 65),
     tools: { ffmpeg: findTool('ffmpeg') !== null, ytdlp: findTool('yt-dlp') !== null, node: findTool('node') !== null },
@@ -80,22 +80,16 @@ async function currentState(): Promise<WallpaperState> {
   }
 }
 
-/** Points the generated theme at the library video and reinstalls it (Orca applies it live). */
+/**
+ * Edits the generated theme and reinstalls it (Orca applies it live). `change` returns false when
+ * there is nothing to change, which skips the reinstall. Installs run one at a time.
+ */
 let installChain: Promise<unknown> = Promise.resolve()
-function applyTheme(id: string | null, strength: number): Promise<void> {
+function updateTheme(change: (theme: Record<string, unknown>) => boolean): Promise<void> {
   const next = installChain.then(async () => {
     const themeFile = join(THEME, 'themes', 'dark.json')
     const theme = JSON.parse(readFileSync(themeFile, 'utf8'))
-    if (id) {
-      const src = join(LIBRARY, id)
-      if (!existsSync(join(src, 'video.mp4'))) throw new Error('Video kütüphanede bulunamadı')
-      mkdirSync(join(THEME, 'media'), { recursive: true })
-      copyFileSync(join(src, 'video.mp4'), join(THEME, 'media', 'bg.mp4'))
-      copyFileSync(join(src, 'poster.jpg'), join(THEME, 'media', 'bg.jpg'))
-    }
-    // Before the first video there is no media to point at; strength is saved and used then.
-    if (!existsSync(join(THEME, 'media', 'bg.mp4'))) return
-    theme.background = { path: 'media/bg.jpg', videoPath: 'media/bg.mp4', opacity: strength / 100, size: 'cover', position: 'center' }
+    if (!change(theme)) return
     writeJson(themeFile, theme)
 
     // A new version tells Orca the files changed.
@@ -115,6 +109,29 @@ function applyTheme(id: string | null, strength: number): Promise<void> {
   })
   installChain = next.catch(() => undefined)
   return next
+}
+
+/** Shows library video `id` behind Orca. `strength` is its opacity over the theme colour (there
+ *  is no control for it any more; the saved value, default 90, is kept). */
+function applyTheme(id: string, strength: number): Promise<void> {
+  return updateTheme((theme) => {
+    const src = join(LIBRARY, id)
+    if (!existsSync(join(src, 'video.mp4'))) throw new Error('Video kütüphanede bulunamadı')
+    mkdirSync(join(THEME, 'media'), { recursive: true })
+    copyFileSync(join(src, 'video.mp4'), join(THEME, 'media', 'bg.mp4'))
+    copyFileSync(join(src, 'poster.jpg'), join(THEME, 'media', 'bg.jpg'))
+    theme.background = { path: 'media/bg.jpg', videoPath: 'media/bg.mp4', opacity: strength / 100, size: 'cover', position: 'center' }
+    return true
+  })
+}
+
+/** "Boş": the theme without a background, so Orca shows its plain colours. */
+function clearTheme(): Promise<void> {
+  return updateTheme((theme) => {
+    if (!('background' in theme)) return false
+    delete theme.background
+    return true
+  })
 }
 
 function makeId(title: string): string {
@@ -187,6 +204,7 @@ export default function activate(orca: OrcaWorkerApi): void {
           progress({ id: jobId, stage: 'convert', percent: Math.round(p), message: 'Dönüştürülüyor…' })
         ).catch((e) => { rmSync(dir, { recursive: true, force: true }); throw e })
         writeJson(join(dir, 'meta.json'), { id, title, source: text, duration, createdAt: Date.now() })
+        await makeThumb(join(dir, 'poster.jpg'), join(dir, 'thumb.jpg')).catch((e) => orca.log(`thumb failed: ${e}`))
 
         progress({ id: jobId, stage: 'install', percent: null, message: 'Arka plana uygulanıyor…' })
         const st = readJson(STATE, { activeId: null as string | null, videoStrength: 90 })
@@ -214,6 +232,30 @@ export default function activate(orca: OrcaWorkerApi): void {
     return state
   })
 
+  orca.panels.handle('video.clear', async () => {
+    await clearTheme()
+    const st = readJson(STATE, { activeId: null as string | null, videoStrength: 90 })
+    writeJson(STATE, { ...st, activeId: null })
+    const state = await currentState()
+    orca.panels.post('state.changed', state)
+    return state
+  })
+
+  // Panels cannot load files outside the plugin, so the card image travels as a data URL.
+  // Answers are capped at 1 MiB; a 480 px JPEG is a few dozen KB.
+  orca.panels.handle('video.thumb', async ({ id }) => {
+    if (!/^[a-z0-9-]+$/.test(id)) throw Object.assign(new Error('Geçersiz video'), { code: 'invalid_params' })
+    const dir = join(LIBRARY, id)
+    const thumb = join(dir, 'thumb.jpg')
+    if (!existsSync(thumb) && existsSync(join(dir, 'poster.jpg'))) {
+      await makeThumb(join(dir, 'poster.jpg'), thumb).catch((e) => orca.log(`thumb failed: ${e}`))
+    }
+    if (!existsSync(thumb)) return { src: null }
+    const data = readFileSync(thumb)
+    if (data.length > 700 * 1024) return { src: null }
+    return { src: `data:image/jpeg;base64,${data.toString('base64')}` }
+  })
+
   orca.panels.handle('video.remove', async ({ id }) => {
     const st = readJson(STATE, { activeId: null as string | null, videoStrength: 90 })
     if (st.activeId === id) throw Object.assign(new Error('Kullanımdaki video silinemez; önce başka bir video seçin'), { code: 'conflict' })
@@ -233,18 +275,6 @@ export default function activate(orca: OrcaWorkerApi): void {
     return { ok: true as const }
   })
 
-  // The slider fires on every step; reinstalling the theme takes ~2 s, so wait for it to settle.
-  let strengthTimer: ReturnType<typeof setTimeout> | null = null
-  orca.panels.handle('strength.set', ({ value }) => {
-    const v = clamp(value, 10, 100, 90)
-    const st = readJson(STATE, { activeId: null as string | null, videoStrength: 90 })
-    writeJson(STATE, { ...st, videoStrength: v })
-    if (strengthTimer) clearTimeout(strengthTimer)
-    strengthTimer = setTimeout(() => {
-      applyTheme(null, v).catch((e) => orca.log(`strength apply failed: ${e}`))
-    }, 700)
-    return { ok: true as const }
-  })
 
   orca.panels.handle('tools.install', async () => {
     const winget = 'winget.exe'

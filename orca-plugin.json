@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "video-wallpaper-studio",
   "name": "Video Wallpaper",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Pick a local or online video as Orca's background, switch between saved videos and tune side panel and center transparency.",
   "engines": {
     "orca": ">=1.4.246"
@@ -16,8 +16,7 @@
         "id": "video-wallpaper-studio",
         "title": "Video Wallpaper",
         "icon": "play",
-        "entry": "src/panel.tsx",
-        "ui": "components"
+        "entry": "panel/index.html"
       }
     ]
   },

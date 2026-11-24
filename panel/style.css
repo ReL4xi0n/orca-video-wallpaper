@@ -1,0 +1,197 @@
+/* Video Wallpaper panel. Colours and fonts come from Orca's --orca-* variables, so the panel
+   follows the active theme; surfaces are translucent so the video background shows through. */
+:root {
+  color-scheme: dark light;
+  --surface: color-mix(in srgb, var(--orca-card, #171717) 82%, transparent);
+  --surface-strong: color-mix(in srgb, var(--orca-popover, #171717) 96%, transparent);
+  --line: var(--orca-border, #ffffff1f);
+  --fg: var(--orca-foreground, #f0f0f0);
+  --muted: var(--orca-muted-foreground, #acacac);
+  --accent: var(--orca-primary, #e5e5e5);
+  --accent-fg: var(--orca-primary-foreground, #171717);
+  --danger: var(--orca-destructive, #e5484d);
+  --radius: var(--orca-radius, 8px);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: transparent; }
+body {
+  font: 13px/1.45 var(--orca-font-sans, system-ui, sans-serif);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+main { display: grid; gap: 14px; padding: 12px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 15px; font-weight: 600; }
+h2 { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { font-size: 11.5px; color: var(--muted); }
+
+/* Notices */
+.notices { display: grid; gap: 8px; }
+.notices:empty { display: none; }
+.notice {
+  display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--radius);
+  background: color-mix(in srgb, #f5a524 14%, var(--surface-strong));
+  border: 1px solid color-mix(in srgb, #f5a524 45%, transparent);
+}
+.notice.error {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+}
+.notice strong { font-weight: 600; }
+.notice p { font-size: 12px; color: color-mix(in srgb, var(--fg) 85%, transparent); }
+.notice .btn { justify-self: start; }
+
+/* Opacity card */
+.panel-card {
+  display: grid; gap: 12px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: calc(var(--radius) + 2px);
+  backdrop-filter: blur(10px);
+}
+.field { display: grid; gap: 4px; }
+.field-row { display: flex; justify-content: space-between; align-items: baseline; }
+.field label { font-weight: 500; }
+.field output { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+input[type="range"] {
+  --track: color-mix(in srgb, var(--fg) 18%, transparent);
+  --fill: var(--accent);
+  --value: 50;
+  --min: 0;
+  --max: 100;
+  --progress: calc((var(--value) - var(--min)) / (var(--max) - var(--min)) * 100%);
+  appearance: none; width: 100%; height: 22px; margin: 0; background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(to right, var(--fill) var(--progress), var(--track) var(--progress));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-top: -5px;
+  border-radius: 50%; background: var(--fg); border: 0; box-shadow: 0 0 0 3px color-mix(in srgb, #000 35%, transparent);
+}
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent); }
+
+/* Library */
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0;
+  border-radius: 7px; border: 1px solid var(--line); background: var(--surface-strong);
+}
+.icon-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--fg) 12%, var(--surface-strong)); }
+.icon-btn.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.icon-btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 85%, #000); }
+.icon-btn.danger-ghost { width: 26px; height: 26px; background: color-mix(in srgb, #000 45%, transparent); border-color: transparent; color: #fff; }
+.icon-btn.danger-ghost:hover:not(:disabled) { background: var(--danger); }
+
+.job {
+  display: grid; gap: 6px; padding: 10px 12px; margin-bottom: 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.job.error { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+.job.done { border-color: color-mix(in srgb, #46a758 55%, transparent); }
+.job-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.job-row span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+progress { width: 100%; height: 4px; appearance: none; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fg) 15%, transparent); overflow: hidden; }
+progress::-webkit-progress-bar { background: transparent; }
+progress::-webkit-progress-value { background: var(--accent); border-radius: 999px; }
+
+.grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+}
+.card {
+  position: relative; display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "media media" "title action" "meta action";
+  column-gap: 6px;
+  padding-bottom: 8px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: calc(var(--radius) + 2px);
+  overflow: hidden; backdrop-filter: blur(10px);
+  transition: border-color .15s, transform .15s;
+}
+.card:has(.card-link:hover) { border-color: color-mix(in srgb, var(--fg) 35%, transparent); }
+.card:has(.card-link:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card[data-active] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card img, .card .no-thumb {
+  grid-area: media; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; display: block;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  margin-bottom: 8px;
+}
+.card .no-thumb { display: none; place-items: center; color: var(--muted); }
+.card .no-thumb svg { width: 22px; height: 22px; }
+/* "Boş": a plain dark tile in Orca's own background colour. */
+.card.none .no-thumb { background: var(--orca-background, #0a0a0a); }
+.card.none .no-thumb svg { width: 26px; height: 26px; opacity: .7; }
+.card[data-thumb="none"] img { display: none; }
+.card[data-thumb="none"] .no-thumb { display: grid; }
+.card h3 { grid-area: title; min-width: 0; padding-left: 9px; font-size: 12.5px; font-weight: 600; }
+.card-link {
+  all: unset; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+}
+.card-link::after { content: ""; position: absolute; inset: 0; }
+.card-link:focus-visible { outline: none; }
+.card .meta { grid-area: meta; padding-left: 9px; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card[data-active] .meta { color: var(--fg); }
+.card footer { grid-area: action; align-self: end; padding-right: 7px; }
+.card footer button { position: relative; z-index: 1; }
+.card[aria-busy="true"] { opacity: .6; }
+.badge {
+  position: absolute; top: 6px; left: 6px; z-index: 0; padding: 1px 7px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 600; background: var(--accent); color: var(--accent-fg);
+}
+.empty { padding: 14px; text-align: center; color: var(--muted); font-size: 12px; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); }
+
+.link-btn { justify-self: start; padding: 2px 0; border: 0; background: none; color: var(--muted); font-size: 11.5px; text-decoration: underline; text-underline-offset: 2px; }
+.link-btn:hover { color: var(--fg); }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid var(--line);
+  background: var(--surface-strong); font-weight: 500;
+}
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.btn.danger { background: var(--danger); color: #fff; border-color: transparent; }
+.btn.ghost { background: transparent; }
+.btn:hover:not(:disabled) { filter: brightness(1.1); }
+
+/* Dialogs */
+dialog {
+  width: min(340px, calc(100vw - 24px)); padding: 16px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--orca-popover, #171717); color: var(--orca-popover-foreground, var(--fg));
+  box-shadow: 0 16px 48px #0008;
+}
+dialog[open] { display: grid; gap: 12px; }
+dialog:modal { overscroll-behavior: contain; }
+dialog::backdrop { background: #0009; backdrop-filter: blur(2px); overflow: hidden; overscroll-behavior: contain; }
+dialog h1 { font-size: 15px; }
+dialog p { color: var(--muted); font-size: 12.5px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.choice {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; text-align: left;
+  border-radius: 10px; border: 1px solid var(--line); background: color-mix(in srgb, var(--fg) 5%, transparent);
+}
+.choice:hover:not(:disabled) { background: color-mix(in srgb, var(--fg) 10%, transparent); }
+.choice svg { width: 20px; height: 20px; }
+.choice span { display: grid; }
+.choice small { color: var(--muted); font-size: 11.5px; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.url-form { display: grid; gap: 8px; }
+.url-form label { font-weight: 500; font-size: 12.5px; }
+.url-row {
+  display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 34px;
+  border: 1px solid var(--orca-input, var(--line)); border-radius: 8px; background: color-mix(in srgb, #000 20%, transparent);
+}
+.url-row:focus-within { border-color: var(--accent); }
+.url-row svg { color: var(--muted); }
+.url-row input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; }
+.url-form .btn { justify-self: end; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

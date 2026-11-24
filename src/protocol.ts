@@ -15,8 +15,6 @@ declare module 'orca' {
   interface WallpaperState {
     library: VideoItem[]
     activeId: string | null
-    /** Video strength over the theme background, 10-100. */
-    videoStrength: number
     /** Side panel opacity %, 0-100 (higher = darker). */
     panels: number
     /** Center chat area opacity %, 0-100 (lower = more video). */
@@ -45,8 +43,11 @@ declare module 'orca' {
     'video.add': { input: { source: string; start?: number }; output: { jobId: string } }
     'video.apply': { input: { id: string }; output: WallpaperState }
     'video.remove': { input: { id: string }; output: WallpaperState }
+    /** "Boş": no video, Orca's plain theme colours. */
+    'video.clear': { output: WallpaperState }
+    /** The card image as a data URL, or null when there is none. */
+    'video.thumb': { input: { id: string }; output: { src: string | null } }
     'opacity.set': { input: { panels?: number; center?: number }; output: { ok: true } }
-    'strength.set': { input: { value: number }; output: { ok: true } }
     /** Installs missing ffmpeg / yt-dlp / Node.js with winget. */
     'tools.install': { output: { ffmpeg: boolean; ytdlp: boolean; node: boolean } }
     /** Points the Orca shortcuts at the transparency launcher. */

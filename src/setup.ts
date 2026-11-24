@@ -6,9 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { BUNDLED } from './bundled'
 import { run } from './media'
-
-export const ORCA_DIR = join(process.env.LOCALAPPDATA ?? '', 'Programs', 'orca')
-export const ORCA_EXE = join(ORCA_DIR, 'Orca.exe')
+import { ORCA_EXE } from './paths'
 
 /**
  * Theme files are written only when missing (the worker edits them afterwards).
@@ -45,14 +43,14 @@ export async function shortcuts(mode: 'status' | 'repair' | 'restore', vbs: stri
   const script = `
 $ErrorActionPreference = 'Stop'
 $mode = ${quote(mode)}; $vbs = ${quote(vbs)}; $exe = ${quote(ORCA_EXE)}
-$wscript = Join-Path $env:WINDIR 'System32\\wscript.exe'
+$wscript = Join-Path ([Environment]::GetFolderPath('System')) 'wscript.exe'
 $want = '"' + $vbs + '"'
 $sh = New-Object -ComObject WScript.Shell
 $files = @()
-foreach ($d in @([Environment]::GetFolderPath('Desktop'), (Join-Path $env:APPDATA 'Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar'))) {
+foreach ($d in @([Environment]::GetFolderPath('Desktop'), (Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar'))) {
   $p = Join-Path $d 'Orca.lnk'; if (Test-Path -LiteralPath $p) { $files += $p }
 }
-$start = Join-Path $env:APPDATA 'Microsoft\\Windows\\Start Menu\\Programs'
+$start = [Environment]::GetFolderPath('Programs')
 if (Test-Path -LiteralPath $start) { $files += @(Get-ChildItem -LiteralPath $start -Recurse -Filter 'Orca.lnk' | ForEach-Object { $_.FullName }) }
 $found = 0; $redirected = 0
 foreach ($p in $files) {
